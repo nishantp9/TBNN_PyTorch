@@ -22,17 +22,17 @@ conda update --all
 http://turbulence.pha.jhu.edu/Forced_isotropic_turbulence.aspx
 ### Input data:
 * Velocity Gradient Tensor (VGT) for incompressible flow
-* Dimension: N x 3 x 3
+* Dimension: `N x 3 x 3`
 * Data directory: `data/train/` & `data/test/`
-* File format .npy
+* File format `.npy`
 * Input tensors are expected to be traceless (Incompressible VGT)
 
 ### Output data / true labels:
 * Any output tensor that is modelled as fn(VGT) and has following properties:
-  * trace = 0
+  * `trace = 0`
   * is symmetric 
-* Dimension: N x 3 x 3
-* File format .npy
+* Dimension: `N x 3 x 3`
+* File format `.npy`
 * Data directory: `data/train/` & `data/test/`
 
 ## Run instructions
@@ -49,7 +49,7 @@ http://turbulence.pha.jhu.edu/Forced_isotropic_turbulence.aspx
 `python3 main.py --data_dir data/test/ --inp_file ## --out_file ## --normalization_strategy ## --ckpt_timestamp ## --ckpt best`
 
 ### NOTE:
-* Check src/args.py for default arguments
+* Check `src/args.py` for default arguments
 * Training curves are generated after certain # epochs (defined as `--save_interval` in `src/args.py`)
 * Training curves are saved in `runs/NN/'timestamp/loss.png'`
 * Model checkpoints and results are saved in `runs/NN/'timestamp'/checkpoint` & `runs/NN/'timestamp'/'split'`
