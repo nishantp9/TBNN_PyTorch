@@ -5,8 +5,8 @@ PyTorch implementation of Tensor Basis Neural Network
 
 ## Conda Installation
 ```
-conda create -n s2s
-conda activate s2s
+conda create -n tbnn
+conda activate tbnn
 conda install numpy
 conda install matplotlib
 conda install scipy
