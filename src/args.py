@@ -89,5 +89,11 @@ def parameters():
     parser.add_argument('--save_interval', type=int, default=20,
                         help="running test loop after every test_interval epochs")
 
+    # Model Arguments
+    parser.add_argument('--hidden_layer_dims', nargs="+", default=[100,100,100,100],
+                        help="dimension of hidden layers of neural network")
+    parser.add_argument('--dropout', type=float, default=0.0,
+                        help="dropout rate")
+
     opt = parser.parse_args()
     return opt

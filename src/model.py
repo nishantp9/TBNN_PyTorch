@@ -12,11 +12,12 @@ class TBNN(nn.Module):
         super(TBNN, self).__init__()
         self.n_lam = params.n_lam
         self.n_bases = params.n_bases
-        hidden_dim = [100,50,25,50,100]
+        hidden_dim = params.hidden_layer_dims
         layers = [nn.Linear(self.n_lam, hidden_dim[0])]
         for i in range(1,len(hidden_dim)):
-            layers.append(nn.ReLU())
             #layers.append(nn.BatchNorm1d(hidden_dim[i-1]))
+            layers.append(nn.Dropout(params.dropout))
+            layers.append(nn.ReLU())
             layers.append(nn.Linear(hidden_dim[i-1], hidden_dim[i]))
         layers.append(nn.ReLU())
         layers.append(nn.Linear(hidden_dim[-1], self.n_bases))
