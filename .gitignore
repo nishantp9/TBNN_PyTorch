@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+
+
+# Directories
+runs
+# FileTypes
+*.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+*.png
+*.pdf
+*.npy
+*.mat
+
+*/*.png
+*/*.pdf
+*/*.npy
+*/*.mat
+
+# Distribution / packaging
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints
+# IPython
+profile_default/
+ipython_config.py
