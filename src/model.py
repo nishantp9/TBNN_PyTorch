@@ -33,15 +33,17 @@ class TBNN(nn.Module):
         self.n_bases = params.n_bases
         hidden_dim = params.hidden_layer_dims
 
-        layers = [nn.Linear(self.n_lam, hidden_dim[0])]
-        for i in range(1,len(hidden_dim)):
-            #layers.append(nn.BatchNorm1d(hidden_dim[i-1]))
-            layers.append(nn.Dropout(params.dropout))
-            layers.append(nn.ReLU())
-            layers.append(nn.Linear(hidden_dim[i-1], hidden_dim[i]))
+        layers = []
+        for dim1, dim2 in zip([self.n_lam]+hidden_dim, hidden_dim):
+            layer = nn.Sequential (
+                nn.Linear(dim1, dim2),
+                # nn.BatchNorm1d(dim2),
+                nn.Dropout(params.dropout),
+                nn.ReLU(),
+            )
+            layers.append(layer)
 
-        layers.append(nn.ReLU())
-        # last layer of NN outputs coefficients
+        # last layer outputs the bases coefficients
         layers.append(nn.Linear(hidden_dim[-1], self.n_bases))
         self.net = nn.Sequential(*layers)
 
