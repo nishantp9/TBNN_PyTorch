@@ -10,11 +10,56 @@ import torchvision.transforms as transforms
 import os
 import numpy as np
 from utils import *
-from args import parameters
 import pickle
 
 
 class TensorDataset(Dataset):
+    """PyTorch Dataset class for Tensor basis NN
+    Computes Tensor Bases and Invariants of input Tensor and 
+    generate input/output samples for feededing to Tensor Basis NN
+    Input: Tracefree tensor of dimension 3
+    Ouput: Bases and Invariants of Symmetric and AntiSymmetric part 
+    of Input that have following properties: 1) trace = 0, 2) is symmetric
+    Attributes
+    ----------
+    params : argparse parameters
+    n_lam : int
+        number of tensor invariants
+    n_bases : int
+        number of tensor bases
+    invariants : PyTorch tensor
+        independent invariants of input tensor
+        dimension (N, n_bases, 3, 3)
+    bases : PyTorch tensor
+        integrity bases formed from sym and anti-sym parts of input tensor
+        properties -- 1) symmetric, 2) tracefree
+        dimension (N, n_lam)
+    output : PyTorch tensor
+        output tensor that is to be modelled as fn(input tensor)
+        properties -- 1) symmetric, 2) tracefree
+        dimension (N, 3, 3)
+    scale : dict1 of {str:  dict2 or PyTorch tensor}
+        dict1:
+            key: str ('lam', 'bases', 'output')
+            val: if normalizing_strategy is 'starndard' or 'minmax':
+                    dict2 (dictionary of scaling tensors)
+                 else: # 'norm'
+                    PyTorch Tensor
+                dict2:
+                    key: str [('mean', 'std') or ('min', 'max')]
+                    val: PyTorch Tensor
+    transform : list of PyTorch transforms
+    Methods
+    -------
+    __len__
+        returns length of dataset
+        usage: len(datset<class TensorDataset>)
+    __item__
+        dataset iterator to be used by PyTorch DataLoader
+    Note
+    ----
+    Lam is used as an abbrv. for Invariants
+    """
     def __init__(self, params, scale=None, transform=[]):
         self.params = params
         self.n_bases, self.n_lam = params.n_bases, params.n_lam
@@ -25,9 +70,19 @@ class TensorDataset(Dataset):
         self.transform = transforms.Compose(transform)
     
     def _load_input_tensors(self):
+        """returns invariants and bases of input tensor
+        Returns
+        -------
+        invariants, bases: tuple of (PyTorch tensor, PyTorch tensor)
+            dimensions:
+                invariants (N, n_lam)
+                bases      (N, n_bases, 3, 3)
+        """
         inp_file = os.path.join(self.params.data_dir, self.params.inp_file)
         A = torch.from_numpy(np.load(inp_file).astype(self.params.precision))
 
+        # get list of tuple of bases and invariant dictionaries
+        # [(lam_dict, bases_dict), ...] for each input tensor
         tensor_list = [get_bases_invariants(X) for X in A]
         bases_dict = {
             i: torch.stack([X[0][i] for X in tensor_list])
@@ -42,11 +97,31 @@ class TensorDataset(Dataset):
         return invariants, bases
 
     def _load_output_tensor(self):
+        """returns output tensor
+        Returns
+        -------
+        B : PyTorch tensor
+            dimensions (N, 3, 3)
+        """
         out_file = os.path.join(self.params.data_dir, self.params.out_file)
         B = torch.from_numpy(np.load(out_file).astype(self.params.precision))
         return B
 
     def _get_scale(self):
+        """returns scale for inputs (lam, bases) and output
+        Returns
+        -------
+        scale : dict1 of {str: dict2 or PyTorch tensor}
+            dict1:
+                key: str ('lam', 'bases', 'output')
+                val: if normalizing_strategy is 'starndard' or 'minmax':
+                        dict2 (dictionary of scaling tensors)
+                    else: # 'norm'
+                        PyTorch Tensor
+                    dict2:
+                        key: str [('mean', 'std') or ('min', 'max')]
+                        val: PyTorch Tensor
+        """
         return {
             x: calculate_scale(y, strategy=self.params.normalizing_strategy)
             for x,y in [('lam', self.invariants), ('bases', self.bases), ('output', self.output)]
@@ -81,6 +156,21 @@ class Scaler(object):
         }
 
 class TensorDataloader(object):
+    """Dataloader class consisting of dataloaders for train/val/test splits 
+    Attributes
+    ----------
+    dataloader_dict : dict of {str: Pytorch Dataloader}
+        dictionary of dataloaders 
+        operating_mode=train: dataloaders for train, val splits
+        operating_mode=load:  dataloaders for test split
+    scale : dict1 of {str:  dict2 or PyTorch tensor}
+        dict1:
+            key: str ('lam', 'bases', 'output')
+            val: dict of scaling tensors or PyTorch Tensor if (strategy='norm')
+    Methods
+    -------
+    No public methods
+    """
     def __init__(self, params):
         self.params = params
         if self.params.operating_mode == 'train':
@@ -103,6 +193,7 @@ class TensorDataloader(object):
             self.dataloader['test'] = self._dataloader(dataset, shuffle=False)
 
     def _dataloader(self, dset, shuffle=False):
+        """return PyToch Dataloader"""
         kwargs = {'num_workers': self.params.num_workers, 'pin_memory': self.params.use_cuda}
         dloader = DataLoader (
             dataset = dset, 

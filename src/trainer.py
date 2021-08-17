@@ -11,12 +11,47 @@ from losses import loss_function
 from ops import get_log_paths
 from dataloader import TensorDataloader
 from model import TBNN
-import numpy as np
 import matplotlib.pyplot as plt
 
 from utils import unnormalize, save_predictions
 
 class Trainer(object):
+    """Trainer class for Tensor Basis Neural Network
+    Attributes
+    ----------
+    params : argparse params
+    root_path : str
+        root directory for storing checkpoints, scale and predictions
+    log_path : str
+        directory for storing checkpoints "root_path/checkpoints/"
+    tensor_data : Instance of <TensorDataloader> class
+        contains dictionary of PyTorch dataloaders for <TensorDataset>
+        PyTorch Dataset class
+    scale : dict1 of {str:  dict2 or PyTorch tensor}
+        dict1:
+            key: str ('lam', 'bases', 'output')
+            val: dict of scaling tensors or PyTorch Tensor if (strategy='norm')
+    model : PyTorch Model (inherits torch.nn.module)
+        Tensor Basis Neural Network (TBNN) model
+    optimizer : PyTorch optimizer <torch.optim>
+        optimizer for temporal model
+    Parameters
+    ----------
+    params : argparse parameters
+    Methods
+    -------
+    fit()
+        fits/trains the model on the training data and save the best model
+    predict(x)
+        returns predictions from current state of the model
+    load()
+        loads the model from specified checkpoint
+    save_predictions(split)
+        generates prediction for provided split
+    Note
+    ----
+    All other methods are assumed private and are meant for internal processing only
+    """
     def __init__(self, params):
         self.params = params
 
@@ -175,6 +210,7 @@ class Trainer(object):
         print('-'*90)
 
     def _plot_loss_history(self, loss):
+        """plot training curves"""
         plt.semilogy(loss['train'], '-k', label='train')
         plt.semilogy(loss['val'], '-r', label='val')
         plt.ylabel('loss')
