@@ -23,10 +23,9 @@ class TBNN(nn.Module):
         return TBNN output after performing linear combination
         of tensor coefficients with the input bases tensors
         x --> net(x) --> coefficients --> dot with bases --> output
-        usage: model(x)
-    Note
-    ----
-    All other methods are assumed private and are meant for internal processing only
+        usage: 
+            model = TBNN(params)
+            out = model(x)
     """
     def __init__(self, params):
         super(TBNN, self).__init__()
