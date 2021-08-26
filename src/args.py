@@ -17,8 +17,8 @@ def parameters():
 
     parser.add_argument('--save_splits', nargs="+", default=['val'],# 'train'],
                         help="Splits for which predictions to be saved")
-    parser.add_argument('--n_bases', type=int, default=10,
-                        help='number of integrated bases tensors')
+    parser.add_argument('--n_basis', type=int, default=10,
+                        help='number of integrated basis tensors')
     parser.add_argument('--n_lam', type=int, default=5,
                         help='number of invariants')
 

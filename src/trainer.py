@@ -29,7 +29,7 @@ class Trainer(object):
         PyTorch Dataset class
     scale : dict1 of {str:  dict2 or PyTorch tensor}
         dict1:
-            key: str ('lam', 'bases', 'output')
+            key: str ('lam', 'basis', 'output')
             val: dict of scaling tensors or PyTorch Tensor if (strategy='norm')
     model : PyTorch Model (inherits torch.nn.module)
         Tensor Basis Neural Network (TBNN) model
@@ -130,11 +130,11 @@ class Trainer(object):
             print('batch: {}/{}'.format(idx+1,n_batches), end='\r')
 
             x_lam = sample['lam']
-            x_bases = sample['bases']
+            x_basis = sample['basis']
             y_true = sample['output']
             x_lam = x_lam.to(self.params.device)
-            x_bases = x_bases.to(self.params.device)
-            x = {'bases': x_bases, 'lam': x_lam}
+            x_basis = x_basis.to(self.params.device)
+            x = {'basis': x_basis, 'lam': x_lam}
             y_true = y_true.to(self.params.device)
 
             self.optimizer.zero_grad()
@@ -161,11 +161,11 @@ class Trainer(object):
         epoch_loss = 0.0
         for idx, sample in enumerate(dloader):
             x_lam = sample['lam']
-            x_bases = sample['bases']
+            x_basis = sample['basis']
             y_true = sample['output']
             x_lam = x_lam.to(self.params.device)
-            x_bases = x_bases.to(self.params.device)
-            x = {'bases': x_bases, 'lam': x_lam}
+            x_basis = x_basis.to(self.params.device)
+            x = {'basis': x_basis, 'lam': x_lam}
             y_true = y_true.to(self.params.device)
 
             y_pred = self.model(x)
@@ -241,11 +241,11 @@ class Trainer(object):
             out_scale = self.scale['output']
             for idx, sample in enumerate(dataloader):
                 x_lam = sample['lam']
-                x_bases = sample['bases']
+                x_basis = sample['basis']
                 y_true = sample['output']
                 x_lam = x_lam.to(self.params.device)
-                x_bases = x_bases.to(self.params.device)
-                x = {'bases': x_bases, 'lam': x_lam}
+                x_basis = x_basis.to(self.params.device)
+                x = {'basis': x_basis, 'lam': x_lam}
                 y_true = y_true.to(self.params.device)
                 y_pred = self.predict(x)
                 y_true = unnormalize(y_true, out_scale, self.params.normalizing_strategy)

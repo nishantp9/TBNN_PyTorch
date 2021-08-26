@@ -15,23 +15,23 @@ import pickle
 
 class TensorDataset(Dataset):
     """PyTorch Dataset class for Tensor basis NN
-    Computes Tensor Bases and Invariants of input Tensor and 
+    Computes Tensor Basis and Invariants of input Tensor and 
     generate input/output samples for feededing to Tensor Basis NN
     Input: Tracefree tensor of dimension 3
-    Ouput: Bases and Invariants of Symmetric and AntiSymmetric part 
+    Ouput: Basis and Invariants of Symmetric and AntiSymmetric part 
     of Input that have following properties: 1) trace = 0, 2) is symmetric
     Attributes
     ----------
     params : argparse parameters
     n_lam : int
         number of tensor invariants
-    n_bases : int
-        number of tensor bases
+    n_basis : int
+        number of tensor basis
     invariants : PyTorch tensor
         independent invariants of input tensor
-        dimension (N, n_bases, 3, 3)
-    bases : PyTorch tensor
-        integrity bases formed from sym and anti-sym parts of input tensor
+        dimension (N, n_basis, 3, 3)
+    basis : PyTorch tensor
+        integrity basis formed from sym and anti-sym parts of input tensor
         properties -- 1) symmetric, 2) tracefree
         dimension (N, n_lam)
     output : PyTorch tensor
@@ -40,7 +40,7 @@ class TensorDataset(Dataset):
         dimension (N, 3, 3)
     scale : dict1 of {str:  dict2 or PyTorch tensor}
         dict1:
-            key: str ('lam', 'bases', 'output')
+            key: str ('lam', 'basis', 'output')
             val: if normalizing_strategy is 'starndard' or 'minmax':
                     dict2 (dictionary of scaling tensors)
                  else: # 'norm'
@@ -62,39 +62,39 @@ class TensorDataset(Dataset):
     """
     def __init__(self, params, scale=None, transform=[]):
         self.params = params
-        self.n_bases, self.n_lam = params.n_bases, params.n_lam
-        self.invariants, self.bases = self._load_input_tensors()
+        self.n_basis, self.n_lam = params.n_basis, params.n_lam
+        self.invariants, self.basis = self._load_input_tensors()
         self.output = self._load_output_tensor()
         self.scale = self._get_scale() if scale is None else scale
         transform.append(Scaler(self.scale, self.params.normalizing_strategy))
         self.transform = transforms.Compose(transform)
     
     def _load_input_tensors(self):
-        """returns invariants and bases of input tensor
+        """returns invariants and basis of input tensor
         Returns
         -------
-        invariants, bases: tuple of (PyTorch tensor, PyTorch tensor)
+        invariants, basis: tuple of (PyTorch tensor, PyTorch tensor)
             dimensions:
                 invariants (N, n_lam)
-                bases      (N, n_bases, 3, 3)
+                basis      (N, n_basis, 3, 3)
         """
         inp_file = os.path.join(self.params.data_dir, self.params.inp_file)
         A = torch.from_numpy(np.load(inp_file).astype(self.params.precision))
 
-        # get list of tuple of bases and invariant dictionaries
-        # [(lam_dict, bases_dict), ...] for each input tensor
-        tensor_list = [get_bases_invariants(X) for X in A]
-        bases_dict = {
+        # get list of tuple of basis and invariant dictionaries
+        # [(lam_dict, basis_dict), ...] for each input tensor
+        tensor_list = [get_basis_invariants(X) for X in A]
+        basis_dict = {
             i: torch.stack([X[0][i] for X in tensor_list])
-            for i in range(self.n_bases)
+            for i in range(self.n_basis)
         }
         invariant_dict = {
             i: torch.stack([X[1][i] for X in tensor_list])
             for i in range(self.n_lam)
         }
-        bases = torch.stack([bases_dict[i] for i in range(self.n_bases)], dim=1)
+        basis = torch.stack([basis_dict[i] for i in range(self.n_basis)], dim=1)
         invariants = torch.stack([invariant_dict[i] for i in range(self.n_lam)], dim=1)
-        return invariants, bases
+        return invariants, basis
 
     def _load_output_tensor(self):
         """returns output tensor
@@ -108,12 +108,12 @@ class TensorDataset(Dataset):
         return B
 
     def _get_scale(self):
-        """returns scale for inputs (lam, bases) and output
+        """returns scale for inputs (lam, basis) and output
         Returns
         -------
         scale : dict1 of {str: dict2 or PyTorch tensor}
             dict1:
-                key: str ('lam', 'bases', 'output')
+                key: str ('lam', 'basis', 'output')
                 val: if normalizing_strategy is 'starndard' or 'minmax':
                         dict2 (dictionary of scaling tensors)
                     else: # 'norm'
@@ -124,16 +124,16 @@ class TensorDataset(Dataset):
         """
         return {
             x: calculate_scale(y, strategy=self.params.normalizing_strategy)
-            for x,y in [('lam', self.invariants), ('bases', self.bases), ('output', self.output)]
+            for x,y in [('lam', self.invariants), ('basis', self.basis), ('output', self.output)]
         }
 
     def __len__(self):
-        return self.bases.size()[0]
+        return self.basis.size()[0]
 
     def __getitem__(self, idx):
         sample = {
             'lam': self.invariants[idx],
-            'bases': self.bases[idx], 
+            'basis': self.basis[idx], 
             'output': self.output[idx]
         }
         if self.transform:
@@ -165,7 +165,7 @@ class TensorDataloader(object):
         operating_mode=load:  dataloaders for test split
     scale : dict1 of {str:  dict2 or PyTorch tensor}
         dict1:
-            key: str ('lam', 'bases', 'output')
+            key: str ('lam', 'basis', 'output')
             val: dict of scaling tensors or PyTorch Tensor if (strategy='norm')
     Methods
     -------

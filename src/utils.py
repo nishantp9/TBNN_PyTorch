@@ -9,7 +9,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-def get_bases_invariants(X):
+def get_basis_invariants(X):
     I = torch.eye(3)
     S   = 0.5*(X + X.T)
     R   = 0.5*(X - X.T)

@@ -13,16 +13,16 @@ class TBNN(nn.Module):
     params : argparse parameters
     n_lam : int
         number of tensor invariants
-    n_bases : int
-        number of tensor bases
+    n_basis : int
+        number of tensor basis
     net : PyTorch NN model
         input (lam) --> net --> coefficients
     Methods
     -------
     forward(x)
         return TBNN output after performing linear combination
-        of tensor coefficients with the input bases tensors
-        x --> net(x) --> coefficients --> dot with bases --> output
+        of tensor coefficients with the input basis tensors
+        x --> net(x) --> coefficients --> dot with basis --> output
         usage: 
             model = TBNN(params)
             out = model(x)
@@ -30,7 +30,7 @@ class TBNN(nn.Module):
     def __init__(self, params):
         super(TBNN, self).__init__()
         self.n_lam = params.n_lam
-        self.n_bases = params.n_bases
+        self.n_basis = params.n_basis
         hidden_dim = params.hidden_layer_dims
 
         layers = []
@@ -43,8 +43,8 @@ class TBNN(nn.Module):
             )
             layers.append(layer)
 
-        # last layer outputs the bases coefficients
-        layers.append(nn.Linear(hidden_dim[-1], self.n_bases))
+        # last layer outputs the basis coefficients
+        layers.append(nn.Linear(hidden_dim[-1], self.n_basis))
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -58,13 +58,13 @@ class TBNN(nn.Module):
         out : PyTorch Tensor
             output of the TBNN network after performing
             linear combination of coeffs. (output of self.net(x))
-            with tensor bases
+            with tensor basis
         """
-        x_lam, x_bases = x['lam'], x['bases']
+        x_lam, x_basis = x['lam'], x['basis']
 
         # forward pass through NN to get output coefficients
         C =  self.net(x_lam)
 
-        # Linear combination of x['bases'] with coefficients
-        out = (C.view(*C.size(),1,1) * x_bases).sum(dim=1)
+        # Linear combination of x['basis'] with coefficients
+        out = (C.view(*C.size(),1,1) * x_basis).sum(dim=1)
         return out
