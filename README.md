@@ -46,7 +46,7 @@ http://turbulence.pha.jhu.edu/Forced_isotropic_turbulence.aspx
 `python3 main.py --data_dir data/train/ --inp_file traceless_input.npy --out_file traceless_sym_output.npy --normalization_strategy standard --batch_size 32 --epochs 501 --save_interval 20`
 
 ## Save predictions for held-out test set
-`python3 main.py --data_dir data/test/ --inp_file ## --out_file ## --normalization_strategy ## --ckpt_timestamp ## --ckpt best`
+`python3 main.py --data_dir data/test/ --inp_file ## --out_file ## --normalization_strategy ## --operating_mode load --ckpt_timestamp ## --ckpt best`
 
 ### NOTE:
 * Check `src/args.py` for default arguments
