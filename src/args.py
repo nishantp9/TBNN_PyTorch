@@ -47,9 +47,8 @@ def parameters():
     parser.add_argument('--num_workers', type=int, default=8,
                         help="number of parallel workers")
 
+    parser.add_argument('--run', type=str, default='NN', help="name for the current run")
 
-    parser.add_argument('--run', type=str, default='NN',
-                        help="name for the current run", choices=['NN', 'autoreg'])
     parser.add_argument('--ckpt_timestamp', type=str, default=None,
                         help="timestamp of model to be loaded")
     parser.add_argument('--ckpt', type=str, default='best',
@@ -78,12 +77,9 @@ def parameters():
     parser.add_argument('--no-schedule_lr', dest='schedule_lr', action='store_true')
     parser.set_defaults(schedule_lr=True)
 
-    parser.add_argument('--loss_type', type=str, default='mse', 
+    parser.add_argument('--loss_type', type=str, default='mse',
                         choices=['mse', 'mae', 'smooth_mae'],
                         help="type of loss to be used for training")
-
-    parser.add_argument('--loss_delay', type=int, default=100,
-                        help="starting index of output sequence to use for loss calculation")
 
     # Logging specific arguments
     parser.add_argument('--save_interval', type=int, default=20,
