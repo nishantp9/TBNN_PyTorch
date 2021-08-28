@@ -67,4 +67,4 @@ class TBNN(nn.Module):
 
         # Linear combination of x['basis'] with coefficients
         out = (C.view(*C.size(),1,1) * x_basis).sum(dim=1)
-        return out
+        return {'output': out, 'coefficients': C}

@@ -139,7 +139,7 @@ class Trainer(object):
 
             self.optimizer.zero_grad()
 
-            y_pred = self.model(x)
+            y_pred = self.predict(x)
 
             loss = loss_function(y_true, y_pred, self.params.loss_type)
             loss.backward()
@@ -168,7 +168,7 @@ class Trainer(object):
             x = {'basis': x_basis, 'lam': x_lam}
             y_true = y_true.to(self.params.device)
 
-            y_pred = self.model(x)
+            y_pred = self.predict(x)
 
             loss = loss_function(y_true, y_pred, self.params.loss_type)
             epoch_loss += loss.detach().cpu().item() 
@@ -176,7 +176,7 @@ class Trainer(object):
         epoch_loss /= n_batches
         return epoch_loss
 
-    def predict(self, x):
+    def predict(self, x, return_coefficients=False):
         """Returns predictions from current state of model
         Parameters
         ----------
@@ -187,7 +187,7 @@ class Trainer(object):
             output from the model
         """
         y = self.model(x)
-        return y
+        return y if return_coefficients else y['output']
 
     def load(self):
         """Loads the best/latest checkpoint from log_path"""
@@ -238,6 +238,7 @@ class Trainer(object):
         with torch.no_grad():
             y_pred_list = []
             y_true_list = []
+            y_coef_list = []
             out_scale = self.scale['output']
             for idx, sample in enumerate(dataloader):
                 x_lam = sample['lam']
@@ -247,13 +248,20 @@ class Trainer(object):
                 x_basis = x_basis.to(self.params.device)
                 x = {'basis': x_basis, 'lam': x_lam}
                 y_true = y_true.to(self.params.device)
-                y_pred = self.predict(x)
+                y_pred_dict = self.predict(x, return_coefficients=True)
+                y_pred = y_pred_dict['output']
+                y_coef = y_pred_dict['coefficients']
                 y_true_list.append(y_true)
                 y_pred_list.append(y_pred)
+                y_coef_list.append(y_coef)
         y_true = torch.cat(y_true_list, dim=0).detach().cpu()
         y_pred = torch.cat(y_pred_list, dim=0).detach().cpu()
+        y_coef = torch.cat(y_coef_list, dim=0).detach().cpu()
         y_true = unnormalize(y_true, out_scale, self.params.normalizing_strategy)
         y_pred = unnormalize(y_pred, out_scale, self.params.normalizing_strategy)
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
+        y_coef = y_coef.numpy()
         save_path = os.path.join(self.params.root_path, 'Results', split)
         os.makedirs(save_path, exist_ok=True)
-        save_predictions(y_true.numpy(), y_pred.numpy(), save_path)
+        save_predictions(y_true, y_pred, y_coef, save_path)
