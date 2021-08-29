@@ -33,7 +33,7 @@ def parameters():
                         help='output file name')
 
     parser.add_argument('--normalizing_strategy', type=str, default='norm',
-                        choices=['standard', 'minmax', 'norm'],
+                        choices=['standard', 'minmax', 'norm', 'none'],
                         help='normalizing strategy for input & output samples')
     parser.add_argument('--precision', type=str, default='float32',
                         help="precision of all tensors and model parameters")

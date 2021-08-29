@@ -19,13 +19,13 @@ def get_basis_invariants(X):
     T = {}; Lam = {}
     T[0] = S
     T[1] = S.mm(R) - R.mm(S)
-    T[2] = S2 - 1./3. * I * S2.trace()
-    T[3] = R2 - 1./3. * I * R2.trace()
+    T[2] = S2 - 1./n_dim * I * S2.trace()
+    T[3] = R2 - 1./n_dim * I * R2.trace()
     T[4] = R.mm(S2) - S2.mm(R)
-    T[5] = R2.mm(S) + S.mm(R2) - 2./3. * I * (S.mm(R2)).trace()
+    T[5] = R2.mm(S) + S.mm(R2) - 2./n_dim * I * (S.mm(R2)).trace()
     T[6] = (R.mm(S)).mm(R2) - (R2.mm(S)).mm(R)
     T[7] = (S.mm(R)).mm(S2) - (S2.mm(R)).mm(S)
-    T[8] = R2.mm(S2) + S2.mm(R2) - 2./3. * I * (S2.mm(R2)).trace()
+    T[8] = R2.mm(S2) + S2.mm(R2) - 2./n_dim * I * (S2.mm(R2)).trace()
     T[9] = (R.mm(S2)).mm(R2) - (R2.mm(S2)).mm(R)
     Lam[0] = S2.trace()
     Lam[1] = R2.trace()
@@ -54,7 +54,9 @@ def calculate_scale(X, strategy):
         else:
             norm = torch.norm(X.view(shp[0],-1), dim=0)
         return norm
-    
+    elif strategy == 'none':
+        return None
+
 def normalize(X, scale, strategy):
     epsilon = 1e-8
     if strategy == 'standard':
@@ -63,6 +65,8 @@ def normalize(X, scale, strategy):
         return (X - scale['min']) / (scale['max']-scale['min']+epsilon)
     elif strategy == 'norm':
         return X / (scale+epsilon)
+    elif strategy == 'none':
+        return X
 
 def unnormalize(X, scale, strategy):
     epsilon = 1e-8
@@ -72,6 +76,8 @@ def unnormalize(X, scale, strategy):
         return X * (scale['max']-scale['min']+epsilon) + scale['min']
     elif strategy == 'norm':
         return X * (scale+epsilon)
+    elif strategy == 'none':
+        return X
 
 def save_predictions(y_true, y_pred, y_coef, save_dir):
     n_dim = y_true.shape[-1]

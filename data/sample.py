@@ -10,14 +10,14 @@ def fn(x):
 
     # symmeteric & traceless output
     y = 0.5*(y+y.T)
-    y -= np.eye(n_dim) * y.trace()/3.
+    y -= np.eye(n_dim) * y.trace()/n_dim
     return y
 
 def get_rand_tensors(N, n_dim):
     A = np.random.randn(N,n_dim,n_dim).astype('float32')
     # traceless input
     for i in range(N):
-        A[i] -= np.eye(n_dim) * A[i].trace()/3.
+        A[i] -= np.eye(n_dim) * A[i].trace()/n_dim
 
     B = []
     for X in A:
