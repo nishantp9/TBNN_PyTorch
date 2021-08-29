@@ -84,7 +84,7 @@ def parameters():
                         help="type of loss to be used for training")
 
     # Logging specific arguments
-    parser.add_argument('--save_interval', type=int, default=20,
+    parser.add_argument('--save_interval', type=int, default=10,
                         help="running test loop after every test_interval epochs")
 
     # Model Arguments
