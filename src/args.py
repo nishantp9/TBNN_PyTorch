@@ -17,6 +17,8 @@ def parameters():
 
     parser.add_argument('--save_splits', nargs="+", default=['val'],# 'train'],
                         help="Splits for which predictions to be saved")
+    parser.add_argument('--n_dim', type=int, default=3, choices=[2, 3],
+                        help='dimension of input/output tensors (2D or 3D)')
     parser.add_argument('--n_basis', type=int, default=10,
                         help='number of integrated basis tensors')
     parser.add_argument('--n_lam', type=int, default=5,
@@ -30,7 +32,7 @@ def parameters():
     parser.add_argument('--out_file', type=str, default='traceless_sym_output.npy',
                         help='output file name')
 
-    parser.add_argument('--normalizing_strategy', type=str, default='standard',
+    parser.add_argument('--normalizing_strategy', type=str, default='norm',
                         choices=['standard', 'minmax', 'norm'],
                         help='normalizing strategy for input & output samples')
     parser.add_argument('--precision', type=str, default='float32',

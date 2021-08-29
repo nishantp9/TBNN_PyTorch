@@ -28,7 +28,9 @@ if __name__ == '__main__':
         params.data_dir = 'data/train'
         trainer = Trainer(params)
         trainer.fit()
-    else: # 'load'
+        if params.ckpt != 'latest':
+            trainer.load()
+    else: #'load'
         params.data_dir = 'data/test'
         trainer = Trainer(params)
         trainer.load()

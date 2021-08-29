@@ -4,19 +4,20 @@ if os.path.basename(os.getcwd()) == "data":
     os.chdir(os.path.join(".."))
 
 def fn(x):
+    n_dim = x.shape[-1]
     y = np.matmul(x, np.matmul((x+x.T), (x-x.T)))
     y = np.matmul((y-y.T), x)
 
     # symmeteric & traceless output
     y = 0.5*(y+y.T)
-    y -= np.eye(3) * y.trace()/3.
+    y -= np.eye(n_dim) * y.trace()/3.
     return y
 
-def get_rand_tensors(N):
-    A = np.random.randn(N,3,3).astype('float32')
+def get_rand_tensors(N, n_dim):
+    A = np.random.randn(N,n_dim,n_dim).astype('float32')
     # traceless input
     for i in range(N):
-        A[i] -= np.eye(3) * A[i].trace()/3.
+        A[i] -= np.eye(n_dim) * A[i].trace()/3.
 
     B = []
     for X in A:
@@ -28,13 +29,13 @@ def get_rand_tensors(N):
 
 if __name__ == '__main__':
 
-    A_train, B_train = get_rand_tensors(N=10000)
+    A_train, B_train = get_rand_tensors(N=10000, n_dim=3)
 
     os.makedirs('data/train', exist_ok=True)
     np.save('data/train/traceless_input', A_train)
     np.save('data/train/traceless_sym_output', B_train)
 
-    A_test, B_test = get_rand_tensors(N=1000)
+    A_test, B_test = get_rand_tensors(N=1000, n_dim=3)
 
     os.makedirs('data/test', exist_ok=True)
     np.save('data/test/traceless_input', A_test)

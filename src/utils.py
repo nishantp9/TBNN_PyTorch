@@ -10,7 +10,8 @@ import os
 import matplotlib.pyplot as plt
 
 def get_basis_invariants(X):
-    I = torch.eye(3)
+    n_dim = X.size()[-1]
+    I = torch.eye(n_dim)
     S   = 0.5*(X + X.T)
     R   = 0.5*(X - X.T)
     S2  = S.mm(S)
@@ -73,13 +74,14 @@ def unnormalize(X, scale, strategy):
         return X * (scale+epsilon)
 
 def save_predictions(y_true, y_pred, y_coef, save_dir):
+    n_dim = y_true.shape[-1]
     np.save(os.path.join(save_dir, 'y_true'), y_true)
     np.save(os.path.join(save_dir, 'y_pred'), y_pred)
     np.save(os.path.join(save_dir, 'y_coef'), y_coef)
     fig = plt.figure(figsize=(8,7))
-    gs = fig.add_gridspec(3,3)
-    for i in range(3):
-        for j in range(3):
+    gs = fig.add_gridspec(n_dim,n_dim)
+    for i in range(n_dim):
+        for j in range(n_dim):
             fig.add_subplot(gs[i,j])
             plt.plot(y_true[:,i,j], y_true[:,i,j], '.k', label='true[{},{}]'.format(i,j))
             plt.plot(y_true[:,i,j], y_pred[:,i,j], '.r', label='pred[{},{}]'.format(i,j))

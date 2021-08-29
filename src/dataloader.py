@@ -23,13 +23,15 @@ class TensorDataset(Dataset):
     Attributes
     ----------
     params : argparse parameters
+    n_dim : int
+        dimension of input/output tensors
     n_lam : int
         number of tensor invariants
     n_basis : int
         number of tensor basis
     invariants : PyTorch tensor
         independent invariants of input tensor
-        dimension (N, n_basis, 3, 3)
+        dimension (N, n_basis, n_dim, n_dim)
     basis : PyTorch tensor
         integrity basis formed from sym and anti-sym parts of input tensor
         properties -- 1) symmetric, 2) tracefree
@@ -37,7 +39,7 @@ class TensorDataset(Dataset):
     output : PyTorch tensor
         output tensor that is to be modelled as fn(input tensor)
         properties -- 1) symmetric, 2) tracefree
-        dimension (N, 3, 3)
+        dimension (N, n_dim, n_dim)
     scale : dict1 of {str:  dict2 or PyTorch tensor}
         dict1:
             key: str ('lam', 'basis', 'output')
@@ -62,7 +64,7 @@ class TensorDataset(Dataset):
     """
     def __init__(self, params, scale=None, transform=[]):
         self.params = params
-        self.n_basis, self.n_lam = params.n_basis, params.n_lam
+        self.n_dim, self.n_basis, self.n_lam = params.n_dim, params.n_basis, params.n_lam
         self.invariants, self.basis = self._load_input_tensors()
         self.output = self._load_output_tensor()
         self.scale = self._get_scale() if scale is None else scale
@@ -76,7 +78,7 @@ class TensorDataset(Dataset):
         invariants, basis: tuple of (PyTorch tensor, PyTorch tensor)
             dimensions:
                 invariants (N, n_lam)
-                basis      (N, n_basis, 3, 3)
+                basis      (N, n_basis, n_dim, n_dim)
         """
         inp_file = os.path.join(self.params.data_dir, self.params.inp_file)
         A = torch.from_numpy(np.load(inp_file).astype(self.params.precision))
@@ -101,7 +103,7 @@ class TensorDataset(Dataset):
         Returns
         -------
         B : PyTorch tensor
-            dimensions (N, 3, 3)
+            dimensions (N, n_dim, n_dim)
         """
         out_file = os.path.join(self.params.data_dir, self.params.out_file)
         B = torch.from_numpy(np.load(out_file).astype(self.params.precision))
