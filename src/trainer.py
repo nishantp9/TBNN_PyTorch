@@ -6,13 +6,14 @@
 
 import os
 import torch
+from torch.nn.modules import loss
 import torch.optim as optim
 from losses import loss_function
 from ops import get_log_paths
 from dataloader import TensorDataloader
 from model import TBNN
 import matplotlib.pyplot as plt
-
+import pickle
 from utils import unnormalize, save_predictions
 
 class Trainer(object):
@@ -58,7 +59,7 @@ class Trainer(object):
         # Define logger
         if self.params.operating_mode == 'train':
             self.root_path, self.log_path  = get_log_paths(self.params.run)
-        elif self.params.operating_mode == 'load':
+        else:
             if self.params.ckpt_timestamp == None:
                 raise Exception("please provide ckpt_timestamp")
             else:
@@ -84,7 +85,7 @@ class Trainer(object):
         print(self.model)
         print('-'*90)
 
-        best_loss = float('inf')
+        loss_history, best_loss, init_epoch, lr_history = self._init_train()
         lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,\
                             patience=self.params.lr_patience,\
                             factor=self.params.lr_reduce_factor,\
@@ -92,28 +93,33 @@ class Trainer(object):
                             cooldown=self.params.lr_cooldown,\
                             min_lr=self.params.min_lr)
         print('-'*90)
-        train_loss = self._eval(self.dataloader['train'])
-        val_loss   = self._eval(self.dataloader['val'])
-        loss_history = {'train': [train_loss], 'val': [val_loss]}
         for epoch in range(self.params.epochs):
+            epoch += init_epoch
             train_loss = self._train()
             val_loss   = self._eval(self.dataloader['val'])
 
             loss_history['train'].append(train_loss)
             loss_history['val'].append(val_loss)
+            lr_history.append(self.optimizer.param_groups[0]['lr'])
+
             print("Epoch: {:02d}, train_loss: {:1.4E}, val_loss: {:1.4E}"\
-                    .format(epoch+1, train_loss, val_loss))
+                    .format(epoch, train_loss, val_loss))
 
             if self.params.schedule_lr:
                 lr_scheduler.step(val_loss)
 
             if epoch % self.params.save_interval == 0:
-                self._plot_loss_history(loss_history)
+                self._plot_loss_history(loss_history, lr_history)
+                state_dict = {
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                }
                 model_path = os.path.join(self.log_path, "net_{}.pth".format(epoch))
-                torch.save(self.model, model_path)
+                torch.save(state_dict, model_path)
                 if val_loss < best_loss:
-                    model_path = os.path.join(self.log_path, "net_best_so_far.pth")
-                    torch.save(self.model, model_path)
+                    model_path = os.path.join(self.log_path, "net_best.pth")
+                    torch.save(state_dict, model_path)
                     best_loss = val_loss
 
     def _train(self):
@@ -190,11 +196,16 @@ class Trainer(object):
         return y if return_coefficients else y['output']
 
     def load(self):
-        """Loads the best/latest checkpoint from log_path"""
+        """Loads the best/latest checkpoint from log_path
+        Returns
+        -------
+        epoch : int
+            epoch of loaded checkpoint
+        """
         if self.log_path is None:
             raise Exception("Invalid ckpt_timestamp: no checkpoints exist")
         if self.params.ckpt == 'best':
-            checkpoint_path = os.path.join(self.log_path, 'net_best_so_far.pth')
+            checkpoint_path = os.path.join(self.log_path, 'net_best.pth')
         elif self.params.ckpt == 'latest':
             filename_list = os.listdir(self.log_path)
             filepath_list = [os.path.join(self.log_path, fname) for fname in filename_list]
@@ -205,12 +216,55 @@ class Trainer(object):
             raise Exception("please provide trainer_params.ckpt_epoch")
 
         print('-'*90)
-        print('Loading model from: <{}>'.format(checkpoint_path))
-        self.model = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        if self.params.resume_training:
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        print('Loaded model from: <{}>, epoch={}'.format(checkpoint_path, checkpoint['epoch']))
         print('-'*90)
+        return checkpoint['epoch']
 
-    def _plot_loss_history(self, loss):
+    def _init_train(self):
+        """initialize training loss, epoch & lr
+        Returns
+        -------
+        loss_history : dict {key: val}
+            key: 'train', 'val'
+            val: loss history
+        best_loss : float
+        init_epoch: int
+            = 1, if training from scratch
+            = checkpoint epoch, if resume training from checkpoint
+        lr_history : list of int
+            learning rate history
+        """
+        if self.params.operating_mode == 'train':
+            train_loss = self._eval(self.dataloader['train'])
+            val_loss   = self._eval(self.dataloader['val'])
+            loss_history = {'train': [train_loss], 'val': [val_loss]}
+            init_epoch = 0
+            lr_history = [self.params.learning_rate]
+            best_loss = float('inf')
+        else:
+            init_epoch = self.load()
+            with open(os.path.join(self.root_path, 'loss.pkl'), 'rb') as handle:
+                loss_history = pickle.load(handle)
+            with open(os.path.join(self.root_path, 'lr.pkl'), 'rb') as handle:
+                lr_history = pickle.load(handle)
+            for k, v in loss_history.items():
+                loss_history[k] = v[:init_epoch]
+            lr_history = lr_history[:init_epoch]
+            if not self.params.use_ckpt_lr:
+                self.optimizer.param_groups[0]['lr'] = self.params.learning_rate
+            best_loss = min(loss_history['val'])
+        return loss_history, best_loss, init_epoch+1, lr_history
+
+    def _plot_loss_history(self, loss, lr):
         """plot training curves"""
+        with open(os.path.join(self.root_path, 'loss.pkl'), 'wb') as handle:
+            pickle.dump(loss, handle)
+        with open(os.path.join(self.root_path, 'lr.pkl'), 'wb') as handle:
+            pickle.dump(lr, handle)
         plt.semilogy(loss['train'], '-k', label='train')
         plt.semilogy(loss['val'], '-r', label='val')
         plt.ylabel('loss')
@@ -219,6 +273,14 @@ class Trainer(object):
         plt.grid()
         plt.legend()
         plt.savefig(os.path.join(self.root_path, 'loss.png'))
+        plt.close()
+
+        plt.plot(lr)
+        plt.ylabel('learning rate')
+        plt.xlabel('epoch')
+        plt.tight_layout()
+        plt.grid()
+        plt.savefig(os.path.join(self.root_path, 'lr.png'))
         plt.close()
 
     def save_predictions(self, split='test'):
@@ -230,8 +292,13 @@ class Trainer(object):
         split : str
             train/val/test split
         """
-        if self.params.operating_mode == 'load':
+        if (self.params.operating_mode == 'load') & (not self.params.resume_training):
+            self.load()
             split = 'test'
+        else:
+            if self.params.ckpt == 'best':
+                self.load()
+
         self.model.eval()
         print('Getting model predictions for {}-set ...'.format(split))
         dataloader = self.dataloader[split]

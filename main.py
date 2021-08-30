@@ -25,15 +25,12 @@ if __name__ == '__main__':
         params.device = torch.device('cpu')
 
     if params.operating_mode == 'train':
-        params.data_dir = 'data/train'
         trainer = Trainer(params)
         trainer.fit()
-        if params.ckpt != 'latest':
-            trainer.load()
     else: #'load'
-        params.data_dir = 'data/test'
         trainer = Trainer(params)
-        trainer.load()
+        if params.resume_training:
+            trainer.fit()
 
     for split in params.save_splits:
         trainer.save_predictions(split)

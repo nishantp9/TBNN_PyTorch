@@ -15,6 +15,14 @@ def parameters():
                         choices=['train','load'],
                         help='Train model or load pre-trained model')
 
+    # whether to resume training and learning rate from specified checkpoint
+    parser.add_argument('--resume_training',    dest='resume_training', action='store_true')
+    parser.add_argument('--no-resume_training', dest='resume_training', action='store_false')
+    parser.set_defaults(resume_training=False)
+    parser.add_argument('--use_ckpt_lr',    dest='use_ckpt_lr', action='store_true')
+    parser.add_argument('--no-use_ckpt_lr', dest='use_ckpt_lr', action='store_false')
+    parser.set_defaults(use_ckpt_lr=True)
+
     parser.add_argument('--save_splits', nargs="+", default=['val'],# 'train'],
                         help="Splits for which predictions to be saved")
     parser.add_argument('--n_dim', type=int, default=3, choices=[2, 3],

@@ -164,7 +164,9 @@ class TensorDataloader(object):
     dataloader_dict : dict of {str: Pytorch Dataloader}
         dictionary of dataloaders 
         operating_mode=train: dataloaders for train, val splits
-        operating_mode=load:  dataloaders for test split
+        operating_mode=load:  
+            not resume_training: dataloaders for test split
+            resume_training    : dataloaders for train, val splits
     scale : dict1 of {str:  dict2 or PyTorch tensor}
         dict1:
             key: str ('lam', 'basis', 'output')
@@ -175,24 +177,30 @@ class TensorDataloader(object):
     """
     def __init__(self, params):
         self.params = params
+        self.dataloader = {}
         if self.params.operating_mode == 'train':
             dataset = TensorDataset(self.params)
             self.scale = dataset.scale
             with open(os.path.join(self.params.root_path, 'scale.pkl'), 'wb') as handle:
                 pickle.dump(self.scale, handle)
-            train_len = int(0.8*len(dataset))
-            val_len = len(dataset) - train_len
-            dataset_split = torch.utils.data.random_split(dataset, [train_len, val_len])
-            self.dataloader = {}
-            self.dataloader['train'] = self._dataloader(dataset_split[0], shuffle=True)
-            self.dataloader['val']   = self._dataloader(dataset_split[1], shuffle=True)
         else:
             with open(os.path.join(self.params.root_path, 'scale.pkl'), 'rb') as handle:
                 self.scale = pickle.load(handle)
             dataset = TensorDataset(self.params, self.scale)
             self.scale = dataset.scale
-            self.dataloader = {}
+
+        if (self.params.operating_mode == 'load') & (not self.params.resume_training):
             self.dataloader['test'] = self._dataloader(dataset, shuffle=False)
+        else:
+            train_len = int(0.8*len(dataset))
+            val_len = len(dataset) - train_len
+            dataset_split = torch.utils.data.random_split (
+                dataset,
+                [train_len, val_len],
+                generator=torch.Generator().manual_seed(self.params.seed)
+            )
+            self.dataloader['train'] = self._dataloader(dataset_split[0], shuffle=True)
+            self.dataloader['val']   = self._dataloader(dataset_split[1], shuffle=True)
 
     def _dataloader(self, dset, shuffle=False):
         """return PyToch Dataloader"""

@@ -98,12 +98,12 @@ def save_predictions(y_true, y_pred, y_coef, save_dir):
     plt.savefig(os.path.join(save_dir, 'preds.png'))
     plt.close()
 
-    fig = plt.figure(figsize=(12,9))
+    fig = plt.figure(figsize=(20,12))
     print(y_coef.shape)
     gs = fig.add_gridspec(y_coef.shape[1]//3+1, 3)
     for i in range(y_coef.shape[1]):
         fig.add_subplot(gs[i//3,i%3])
-        plt.hist(y_coef[:,i], density=True, bins=y_coef.shape[0]//50)
+        plt.hist(y_coef[:,i], density=True, bins=25)
         plt.xlabel('C{}'.format(i))
         plt.grid()
         plt.tight_layout()
