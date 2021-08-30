@@ -6,7 +6,6 @@
 
 import os
 import torch
-from torch.nn.modules import loss
 import torch.optim as optim
 from losses import loss_function
 from ops import get_log_paths

@@ -24,13 +24,10 @@ if __name__ == '__main__':
     else:
         params.device = torch.device('cpu')
 
-    if params.operating_mode == 'train':
-        trainer = Trainer(params)
+    trainer = Trainer(params)
+
+    if (params.operating_mode == 'train') | params.resume_training:
         trainer.fit()
-    else: #'load'
-        trainer = Trainer(params)
-        if params.resume_training:
-            trainer.fit()
 
     for split in params.save_splits:
         trainer.save_predictions(split)
