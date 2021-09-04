@@ -70,7 +70,7 @@ class TensorDataset(Dataset):
         self.scale = self._get_scale() if scale is None else scale
         transform.append(Scaler(self.scale, self.params.normalizing_strategy))
         self.transform = transforms.Compose(transform)
-    
+
     def _load_input_tensors(self):
         """returns invariants and basis of input tensor
         Returns
