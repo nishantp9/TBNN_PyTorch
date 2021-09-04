@@ -324,7 +324,8 @@ class Trainer(object):
         y_pred = torch.cat(y_pred_list, dim=0).detach().cpu()
         y_coef = torch.cat(y_coef_list, dim=0).detach().cpu()
         if self.params.normalizing_strategy == 'norm':
-            y_coef *= self.scale['basis'].squeeze().view(1,-1)
+            y_coef /= self.scale['basis'].squeeze().view(1,-1)
+            y_coef *= out_scale.squeeze().view(1,-1)
         y_true = unnormalize(y_true, out_scale, self.params.normalizing_strategy)
         y_pred = unnormalize(y_pred, out_scale, self.params.normalizing_strategy)
         y_true = y_true.numpy()
