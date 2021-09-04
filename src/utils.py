@@ -84,6 +84,16 @@ def save_predictions(y_true, y_pred, y_coef, save_dir):
     np.save(os.path.join(save_dir, 'y_true'), y_true)
     np.save(os.path.join(save_dir, 'y_pred'), y_pred)
     np.save(os.path.join(save_dir, 'y_coef'), y_coef)
+
+    y_coef_mean = y_coef.mean(axis=0)
+    y_coef_std  = y_coef.std(axis=0)
+    print('-'*90)
+    print('Basis coefficients:')
+    for i in range(y_coef.shape[1]):
+        print('C_{}: mean = {:+1.3E}'.format(i, y_coef_mean[i]))
+    print('-'*90)
+
+    np.save(os.path.join(save_dir, 'y_coef_mean'), y_coef_mean)
     fig = plt.figure(figsize=(8,7))
     gs = fig.add_gridspec(n_dim,n_dim)
     for i in range(n_dim):
@@ -99,10 +109,10 @@ def save_predictions(y_true, y_pred, y_coef, save_dir):
     plt.close()
 
     fig = plt.figure(figsize=(20,12))
-    print(y_coef.shape)
     gs = fig.add_gridspec(y_coef.shape[1]//3+1, 3)
     for i in range(y_coef.shape[1]):
         fig.add_subplot(gs[i//3,i%3])
+        plt.title('mean = {:+1.3E}, std = {:1.3E}'.format(y_coef_mean[i], y_coef_std[i]))
         plt.hist(y_coef[:,i], density=True, bins=25)
         plt.xlabel('C{}'.format(i))
         plt.grid()
