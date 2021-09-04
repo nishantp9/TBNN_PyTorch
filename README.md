@@ -43,10 +43,13 @@ http://turbulence.pha.jhu.edu/Forced_isotropic_turbulence.aspx
 * generate random sample dataset (unphysical & non-turbulence, for illustration purposes only): 
   * `python3 data/sample.py`
 
-`python3 main.py --data_dir data/train/ --inp_file traceless_input.npy --out_file traceless_sym_output.npy --normalization_strategy standard --batch_size 32 --epochs 501 --save_interval 20`
+`python3 main.py --data_dir data/train/ --inp_file traceless_input.npy --out_file traceless_sym_output.npy --batch_size 32 --epochs 501 --save_interval 20`
 
 ## Save predictions for held-out test set
-`python3 main.py --data_dir data/test/ --inp_file ## --out_file ## --normalization_strategy ## --operating_mode load --ckpt_timestamp ## --ckpt best`
+`python3 main.py --data_dir data/test/ --inp_file ## --out_file ## --operating_mode load --ckpt_timestamp ## --ckpt best`
+
+## Resume Training from checkpoint
+`python3 main.py --data_dir data/train/ --inp_file ## --out_file ## --batch_size 32 --epochs 501 --save_interval 20 --operating_mode load --resume_training --ckpt_timestamp ## --ckpt best`
 
 ### NOTE:
 * Check `src/args.py` for default arguments
