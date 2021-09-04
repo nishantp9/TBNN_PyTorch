@@ -12,6 +12,7 @@ from args import parameters
 from trainer import Trainer
 from ops import seed
 
+torch.multiprocessing.set_sharing_strategy('file_system')
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 if __name__ == '__main__':
