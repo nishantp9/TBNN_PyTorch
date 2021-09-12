@@ -40,9 +40,16 @@ def parameters():
     parser.add_argument('--out_file', type=str, default='traceless_sym_output.npy',
                         help='output file name')
 
-    parser.add_argument('--normalizing_strategy', type=str, default='norm',
+    parser.add_argument('--normalizing_strategy_basis', type=str, default='norm',
                         choices=['standard', 'minmax', 'norm', 'none'],
-                        help='normalizing strategy for input & output samples')
+                        help='normalizing strategy for tensor basis')
+    parser.add_argument('--normalizing_strategy_lam', type=str, default='norm',
+                        choices=['standard', 'minmax', 'norm', 'none'],
+                        help='normalizing strategy for tensor invariants')
+    parser.add_argument('--normalizing_strategy_output', type=str, default='norm',
+                        choices=['standard', 'minmax', 'norm', 'none'],
+                        help='normalizing strategy for output tensor')
+
     parser.add_argument('--precision', type=str, default='float32',
                         help="precision of all tensors and model parameters")
     parser.add_argument('--batch_size', type=int, default=32,

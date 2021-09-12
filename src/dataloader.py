@@ -65,11 +65,26 @@ class TensorDataset(Dataset):
     def __init__(self, params, scale=None, transform=[]):
         self.params = params
         self.n_dim, self.n_basis, self.n_lam = params.n_dim, params.n_basis, params.n_lam
+        self.normalizing_strategy = self._get_normalizing_strategy()
         self.invariants, self.basis = self._load_input_tensors()
         self.output = self._load_output_tensor()
         self.scale = self._get_scale() if scale is None else scale
-        transform.append(Scaler(self.scale, self.params.normalizing_strategy))
+        transform.append(Scaler(self.scale, self.normalizing_strategy))
         self.transform = transforms.Compose(transform)
+
+    def _get_normalizing_strategy(self):
+        """returns normalizing strategies for input/output
+        Returns
+        -------
+        dict of {str: str}
+            key: 'lam', 'basis', 'output'
+            vals: normalizing strategy
+        """
+        return {
+            'lam'   : self.params.normalizing_strategy_lam,
+            'basis' : self.params.normalizing_strategy_basis,
+            'output': self.params.normalizing_strategy_output
+        }
 
     def _load_input_tensors(self):
         """returns invariants and basis of input tensor
@@ -125,7 +140,7 @@ class TensorDataset(Dataset):
                         val: PyTorch Tensor
         """
         return {
-            x: calculate_scale(y, strategy=self.params.normalizing_strategy)
+            x: calculate_scale(y, strategy=self.normalizing_strategy[x])
             for x,y in [('lam', self.invariants), ('basis', self.basis), ('output', self.output)]
         }
 
@@ -153,7 +168,7 @@ class Scaler(object):
 
     def __call__(self, sample):
         return {
-            x: normalize(y, self.scale[x], self.strategy)
+            x: normalize(y, self.scale[x], self.strategy[x])
             for x,y in sample.items()
         }
 

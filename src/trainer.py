@@ -134,13 +134,10 @@ class Trainer(object):
         for idx, sample in enumerate(self.dataloader['train']):
             print('batch: {}/{}'.format(idx+1,n_batches), end='\r')
 
-            x_lam = sample['lam']
-            x_basis = sample['basis']
-            y_true = sample['output']
-            x_lam = x_lam.to(self.params.device)
-            x_basis = x_basis.to(self.params.device)
+            x_lam   = sample['lam'].to(self.params.device)
+            x_basis = sample['basis'].to(self.params.device)
+            y_true  = sample['output'].to(self.params.device)
             x = {'basis': x_basis, 'lam': x_lam}
-            y_true = y_true.to(self.params.device)
 
             self.optimizer.zero_grad()
 
@@ -165,13 +162,10 @@ class Trainer(object):
         n_batches = len(dloader)
         epoch_loss = 0.0
         for idx, sample in enumerate(dloader):
-            x_lam = sample['lam']
-            x_basis = sample['basis']
-            y_true = sample['output']
-            x_lam = x_lam.to(self.params.device)
-            x_basis = x_basis.to(self.params.device)
+            x_lam   = sample['lam'].to(self.params.device)
+            x_basis = sample['basis'].to(self.params.device)
+            y_true  = sample['output'].to(self.params.device)
             x = {'basis': x_basis, 'lam': x_lam}
-            y_true = y_true.to(self.params.device)
 
             y_pred = self.predict(x)
 
@@ -283,9 +277,9 @@ class Trainer(object):
         plt.close()
 
     def save_predictions(self, split='test'):
-        """Saves predictions and prints metrics
+        """Saves predictions
         Generates predictions for provided train/val/test split
-        Saved forecast as a netcdf file
+        Saves model predictions as numpy files
         Parameters
         ----------
         split : str
@@ -307,27 +301,28 @@ class Trainer(object):
             y_coef_list = []
             out_scale = self.scale['output']
             for idx, sample in enumerate(dataloader):
-                x_lam = sample['lam']
-                x_basis = sample['basis']
-                y_true = sample['output']
-                x_lam = x_lam.to(self.params.device)
-                x_basis = x_basis.to(self.params.device)
+                x_lam   = sample['lam'].to(self.params.device)
+                x_basis = sample['basis'].to(self.params.device)
+                y_true  = sample['output'].to(self.params.device)
                 x = {'basis': x_basis, 'lam': x_lam}
-                y_true = y_true.to(self.params.device)
                 y_pred_dict = self.predict(x, return_coefficients=True)
                 y_pred = y_pred_dict['output']
                 y_coef = y_pred_dict['coefficients']
                 y_true_list.append(y_true)
                 y_pred_list.append(y_pred)
                 y_coef_list.append(y_coef)
+
         y_true = torch.cat(y_true_list, dim=0).detach().cpu()
         y_pred = torch.cat(y_pred_list, dim=0).detach().cpu()
         y_coef = torch.cat(y_coef_list, dim=0).detach().cpu()
-        if self.params.normalizing_strategy == 'norm':
+
+        if self.params.normalizing_strategy_basis == 'norm':
             y_coef /= self.scale['basis'].squeeze().view(1,-1)
-            y_coef *= out_scale.squeeze().view(1,-1)
-        y_true = unnormalize(y_true, out_scale, self.params.normalizing_strategy)
-        y_pred = unnormalize(y_pred, out_scale, self.params.normalizing_strategy)
+            if self.params.normalizing_strategy_output == 'norm':
+                y_coef *= out_scale.squeeze().view(1,-1)
+
+        y_true = unnormalize(y_true, out_scale, self.params.normalizing_strategy_output)
+        y_pred = unnormalize(y_pred, out_scale, self.params.normalizing_strategy_output)
         y_true = y_true.numpy()
         y_pred = y_pred.numpy()
         y_coef = y_coef.numpy()
