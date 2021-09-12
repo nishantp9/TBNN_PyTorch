@@ -43,7 +43,7 @@ def parameters():
     parser.add_argument('--normalizing_strategy_basis', type=str, default='norm',
                         choices=['standard', 'minmax', 'norm', 'none'],
                         help='normalizing strategy for tensor basis')
-    parser.add_argument('--normalizing_strategy_lam', type=str, default='norm',
+    parser.add_argument('--normalizing_strategy_lam', type=str, default='standard',
                         choices=['standard', 'minmax', 'norm', 'none'],
                         help='normalizing strategy for tensor invariants')
     parser.add_argument('--normalizing_strategy_output', type=str, default='norm',
