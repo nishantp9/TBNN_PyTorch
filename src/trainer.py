@@ -76,6 +76,8 @@ class Trainer(object):
             self.model = self.model.double()
         self.model = self.model.to(self.params.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.params.learning_rate)
+        self.epoch = 0; self.best_epoch = 0
+        self.best_loss = float('inf')
 
     def fit(self):
         """fits/trains PyTorch model on the training data and save checkpoints"""
@@ -85,15 +87,14 @@ class Trainer(object):
         print('-'*90)
 
         loss_history, best_loss, init_epoch, lr_history = self._init_train()
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,\
-                            patience=self.params.lr_patience,\
-                            factor=self.params.lr_reduce_factor,\
-                            verbose=True, mode=self.params.lr_schedule_mode,\
-                            cooldown=self.params.lr_cooldown,\
-                            min_lr=self.params.min_lr)
+        self.best_epoch = init_epoch
+        self.best_loss = best_loss
+        lr_scheduler = self._get_lr_scheduler()
         print('-'*90)
         for epoch in range(self.params.epochs):
             epoch += init_epoch
+            self.epoch = epoch
+
             train_loss = self._train()
             val_loss   = self._eval(self.dataloader['val'])
 
@@ -109,17 +110,9 @@ class Trainer(object):
 
             if epoch % self.params.save_interval == 0:
                 self._plot_loss_history(loss_history, lr_history)
-                state_dict = {
-                    'epoch': epoch,
-                    'model_state_dict': self.model.state_dict(),
-                    'optimizer_state_dict': self.optimizer.state_dict(),
-                }
-                model_path = os.path.join(self.log_path, "net_{}.pth".format(epoch))
-                torch.save(state_dict, model_path)
-                if val_loss < best_loss:
-                    model_path = os.path.join(self.log_path, "net_best.pth")
-                    torch.save(state_dict, model_path)
-                    best_loss = val_loss
+                early_stop = self._save_model_state(val_loss)
+                if early_stop:
+                    break
 
     def _train(self):
         """Training pass for a single epoch
@@ -188,34 +181,16 @@ class Trainer(object):
         y = self.model(x)
         return y if return_coefficients else y['output']
 
-    def load(self):
-        """Loads the best/latest checkpoint from log_path
-        Returns
-        -------
-        epoch : int
-            epoch of loaded checkpoint
-        """
-        if self.log_path is None:
-            raise Exception("Invalid ckpt_timestamp: no checkpoints exist")
-        if self.params.ckpt == 'best':
-            checkpoint_path = os.path.join(self.log_path, 'net_best.pth')
-        elif self.params.ckpt == 'latest':
-            filename_list = os.listdir(self.log_path)
-            filepath_list = [os.path.join(self.log_path, fname) for fname in filename_list]
-            checkpoint_path = sorted(filepath_list, key=os.path.getmtime)[-1]
-        elif self.params.ckpt_epoch is not None:
-            checkpoint_path = os.path.join(self.log_path, 'net_{}.pth'.format(self.params.ckpt_epoch))
-        else:
-            raise Exception("please provide trainer_params.ckpt_epoch")
-
-        print('-'*90)
-        checkpoint = torch.load(checkpoint_path)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        if self.params.resume_training:
-            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        print('Loaded model from: <{}>, epoch={}'.format(checkpoint_path, checkpoint['epoch']))
-        print('-'*90)
-        return checkpoint['epoch']
+    def _get_lr_scheduler(self):
+        """returns learning rate scheduler"""
+        return optim.lr_scheduler.ReduceLROnPlateau (
+            self.optimizer,
+            patience=self.params.lr_patience,
+            factor=self.params.lr_reduce_factor,
+            verbose=True, mode=self.params.lr_schedule_mode,
+            cooldown=self.params.lr_cooldown,
+            min_lr=self.params.min_lr
+        )
 
     def _init_train(self):
         """initialize training loss, epoch & lr
@@ -251,6 +226,64 @@ class Trainer(object):
                 self.optimizer.param_groups[0]['lr'] = self.params.learning_rate
             best_loss = min(loss_history['val'])
         return loss_history, best_loss, init_epoch+1, lr_history
+
+    def load(self):
+        """Loads the best/latest checkpoint from log_path
+        Returns
+        -------
+        epoch : int
+            epoch of loaded checkpoint
+        """
+        if self.log_path is None:
+            raise Exception("Invalid ckpt_timestamp: no checkpoints exist")
+        if self.params.ckpt == 'best':
+            checkpoint_path = os.path.join(self.log_path, 'net_best.pth')
+        elif self.params.ckpt == 'latest':
+            filename_list = os.listdir(self.log_path)
+            filepath_list = [os.path.join(self.log_path, fname) for fname in filename_list]
+            checkpoint_path = sorted(filepath_list, key=os.path.getmtime)[-1]
+        elif self.params.ckpt_epoch is not None:
+            checkpoint_path = os.path.join(self.log_path, 'net_{}.pth'.format(self.params.ckpt_epoch))
+        else:
+            raise Exception("please provide trainer_params.ckpt_epoch")
+
+        print('-'*90)
+        checkpoint = torch.load(checkpoint_path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        if self.params.resume_training:
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        print('Loaded model from: <{}>, epoch={}'.format(checkpoint_path, checkpoint['epoch']))
+        print('-'*90)
+        return checkpoint['epoch']
+
+    def _save_model_state(self, val_loss):
+        """saves current and best model state
+        Parameters
+        ----------
+        val_loss: float
+        Returns
+        -------
+        early_stop: bool
+            flag for early stopping
+        """
+        early_stop = False
+        state_dict = {
+            'epoch': self.epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+        }
+        model_path = os.path.join(self.log_path, "net_{}.pth".format(self.epoch))
+        torch.save(state_dict, model_path)
+        if val_loss < self.best_loss:
+            self.best_epoch = self.epoch
+            model_path = os.path.join(self.log_path, "net_best.pth")
+            torch.save(state_dict, model_path)
+            self.best_loss = val_loss
+        if self.epoch - self.best_epoch > self.params.early_stop_patience:
+            print('Early Stopping ...')
+            print('Best model state at epoch = {}'.format(self.best_epoch))
+            early_stop = True
+        return early_stop
 
     def _plot_loss_history(self, loss, lr):
         """plot training curves"""

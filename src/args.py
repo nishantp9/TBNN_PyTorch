@@ -84,6 +84,8 @@ def parameters():
                         help="number of epochs for lr reduction")
     parser.add_argument('--min_lr', type=float, default=1e-6,
                         help="minimun lr for learning rate scheduler")
+    parser.add_argument('--early_stop_patience', type=int, default=30,
+                        help="#epochs to wait for early stopping")
 
     # Training loop arguments
     parser.add_argument('--epochs', type=int, default=501,
