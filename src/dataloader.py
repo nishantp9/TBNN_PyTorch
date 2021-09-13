@@ -70,6 +70,7 @@ class TensorDataset(Dataset):
         self.invariants, self.basis = self._load_input_tensors()
         self.output = self._load_output_tensor()
         self.scale = self._get_scale() if scale is None else scale
+        self._verify_dimensions()
         transform.append(Scaler(self.scale, self.normalizing_strategy))
         self.transform = transforms.Compose(transform)
 
@@ -103,10 +104,14 @@ class TensorDataset(Dataset):
         if self.params.clamp_input:
             A = clamp(A, self.params.clamp_std)
         A = remove_trace(A)
+        self.n_dim = A.size()[-1]
 
         # get list of tuple of basis and invariant dictionaries
         # [(lam_dict, basis_dict), ...] for each input tensor
-        tensor_list = [get_basis_invariants(X) for X in A]
+        tensor_list  = [get_basis_invariants(X) for X in A]
+        self.n_basis = len(tensor_list[0][0])
+        self.n_lam   = len(tensor_list[0][1])
+
         basis_dict = {
             i: torch.stack([X[0][i] for X in tensor_list])
             for i in range(self.n_basis)
@@ -117,7 +122,7 @@ class TensorDataset(Dataset):
         }
         basis = torch.stack([basis_dict[i] for i in range(self.n_basis)], dim=1)
         invariants = torch.stack([invariant_dict[i] for i in range(self.n_lam)], dim=1)
-        toc(t1, message='completed basis & invariants calculation: #samples = {}'.format(len(A)))
+        toc(t1, message='completed basis & invariants calculation: #shape = {}'.format(len(A)))
         return invariants, basis
 
     def _load_output_tensor(self):
@@ -156,6 +161,14 @@ class TensorDataset(Dataset):
             x: calculate_scale(y, strategy=self.normalizing_strategy[x])
             for x,y in [('lam', self.invariants), ('basis', self.basis), ('output', self.output)]
         }
+
+    def _verify_dimensions(self):
+        """validates & broadcasts tensor dims"""
+        self.params.n_dim   = self.n_dim
+        self.params.n_basis = self.n_basis
+        self.params.n_lam   = self.n_lam
+        print('n_dim = {}, n_lam = {}, n_basis = {}'.format(self.n_dim, self.n_lam, self.n_basis))
+        print('-'*90)
 
     def __len__(self):
         return self.basis.size()[0]
