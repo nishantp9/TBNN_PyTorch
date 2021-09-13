@@ -14,6 +14,7 @@ def get_basis_invariants(X):
     I = torch.eye(n_dim)
     S   = 0.5*(X + X.T)
     R   = 0.5*(X - X.T)
+    S   = S - 1./n_dim * I * S.trace()
     S2  = S.mm(S)
     R2  = R.mm(R)
     T = {}; Lam = {}
@@ -33,6 +34,16 @@ def get_basis_invariants(X):
     Lam[3] = (R2.mm(S)).trace()
     Lam[4] = (R2.mm(S2)).trace()
     return T, Lam
+
+def clamp(X, n_std):
+    cap = n_std * X.flatten().std()
+    X = X.clamp(min=-cap, max=cap)
+    return X
+
+def remove_trace(X):
+    n_dim = X.size()[-1]
+    X -= torch.einsum('aii->a', X).view(-1,1,1) * torch.eye(n_dim)/n_dim
+    return X
 
 def calculate_scale(X, strategy):
     if strategy == 'standard':

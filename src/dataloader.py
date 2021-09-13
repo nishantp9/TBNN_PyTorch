@@ -11,6 +11,7 @@ import os
 import numpy as np
 from utils import *
 import pickle
+from ops import tic, toc
 
 
 class TensorDataset(Dataset):
@@ -96,7 +97,12 @@ class TensorDataset(Dataset):
                 basis      (N, n_basis, n_dim, n_dim)
         """
         inp_file = os.path.join(self.params.data_dir, self.params.inp_file)
+        t1 = tic(message='calculating basis & invariants from <{}> ...'.format(inp_file))
         A = torch.from_numpy(np.load(inp_file).astype(self.params.precision))
+        # clamp the inputs
+        if self.params.clamp_input:
+            A = clamp(A, self.params.clamp_std)
+        A = remove_trace(A)
 
         # get list of tuple of basis and invariant dictionaries
         # [(lam_dict, basis_dict), ...] for each input tensor
@@ -111,6 +117,7 @@ class TensorDataset(Dataset):
         }
         basis = torch.stack([basis_dict[i] for i in range(self.n_basis)], dim=1)
         invariants = torch.stack([invariant_dict[i] for i in range(self.n_lam)], dim=1)
+        toc(t1, message='completed basis & invariants calculation: #samples = {}'.format(len(A)))
         return invariants, basis
 
     def _load_output_tensor(self):
@@ -121,7 +128,13 @@ class TensorDataset(Dataset):
             dimensions (N, n_dim, n_dim)
         """
         out_file = os.path.join(self.params.data_dir, self.params.out_file)
+        t1 = tic(message='loading output tensor from <{}> ...'.format(out_file))
         B = torch.from_numpy(np.load(out_file).astype(self.params.precision))
+        # clamp output tensor
+        if self.params.clamp_output:
+            B = clamp(B, self.params.clamp_std)
+        B = remove_trace(B)
+        toc(t1, message='successfully loaded output tensor')
         return B
 
     def _get_scale(self):
