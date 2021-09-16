@@ -69,7 +69,7 @@ def calculate_scale(X, strategy):
         return None
 
 def normalize(X, scale, strategy):
-    epsilon = 1e-8
+    epsilon = 1e-14
     if strategy == 'standard':
         return (X - scale['mean']) / (scale['std']+epsilon)
     elif strategy == 'minmax':
@@ -80,7 +80,7 @@ def normalize(X, scale, strategy):
         return X
 
 def unnormalize(X, scale, strategy):
-    epsilon = 1e-8
+    epsilon = 1e-14
     if strategy == 'standard':
         return X * (scale['std']+epsilon) + scale['mean']
     elif strategy == 'minmax':
