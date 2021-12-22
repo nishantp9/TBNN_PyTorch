@@ -46,6 +46,7 @@ class TBNN(nn.Module):
         # last layer outputs the basis coefficients
         layers.append(nn.Linear(hidden_dim[-1], self.n_basis))
         self.net = nn.Sequential(*layers)
+        #self.net.apply(init_weights)
 
     def forward(self, x):
         """forward pass through TBNN
@@ -68,3 +69,8 @@ class TBNN(nn.Module):
         # Linear combination of x['basis'] with coefficients
         out = (C.view(*C.size(),1,1) * x_basis).sum(dim=1)
         return {'output': out, 'coefficients': C}
+
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_normal_(m.weight)
+        m.bias.data.fill_(0.01)
