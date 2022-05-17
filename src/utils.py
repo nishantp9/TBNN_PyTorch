@@ -10,29 +10,32 @@ import os
 import matplotlib.pyplot as plt
 
 def get_basis_invariants(X):
-    n_dim = X.size()[-1]
-    I = torch.eye(n_dim)
-    S   = 0.5*(X + X.T)
-    R   = 0.5*(X - X.T)
-    S   = S - 1./n_dim * I * S.trace()
-    S2  = S.mm(S)
-    R2  = R.mm(R)
+    BT = lambda x : torch.transpose(x, 1, 2)
+    Btrace = lambda x : torch.einsum('aii->a', x).view(-1,1,1)
+    size = X.size()
+    bsz, n_dim = size[0], size[-1]
+    I = torch.eye(n_dim).unsqueeze(0).repeat(bsz,1,1)
+    S   = 0.5*(X + BT(X))
+    R   = 0.5*(X - BT(X))
+    S   = S - 1./n_dim * I * Btrace(S)
+    S2  = S.bmm(S)
+    R2  = R.bmm(R)
     T = {}; Lam = {}
     T[0] = S
-    T[1] = S.mm(R) - R.mm(S)
-    T[2] = S2 - 1./n_dim * I * S2.trace()
-    T[3] = R2 - 1./n_dim * I * R2.trace()
-    T[4] = R.mm(S2) - S2.mm(R)
-    T[5] = R2.mm(S) + S.mm(R2) - 2./n_dim * I * (S.mm(R2)).trace()
-    T[6] = (R.mm(S)).mm(R2) - (R2.mm(S)).mm(R)
-    T[7] = (S.mm(R)).mm(S2) - (S2.mm(R)).mm(S)
-    T[8] = R2.mm(S2) + S2.mm(R2) - 2./n_dim * I * (S2.mm(R2)).trace()
-    T[9] = (R.mm(S2)).mm(R2) - (R2.mm(S2)).mm(R)
-    Lam[0] = S2.trace()
-    Lam[1] = R2.trace()
-    Lam[2] = (S2.mm(S)).trace()
-    Lam[3] = (R2.mm(S)).trace()
-    Lam[4] = (R2.mm(S2)).trace()
+    T[1] = S.bmm(R) - R.bmm(S)
+    T[2] = S2 - 1./n_dim * I * Btrace(S2)
+    T[3] = R2 - 1./n_dim * I * Btrace(R2)
+    T[4] = R.bmm(S2) - S2.bmm(R)
+    T[5] = R2.bmm(S) + S.bmm(R2) - 2./n_dim * I * Btrace(S.bmm(R2))
+    T[6] = (R.bmm(S)).bmm(R2) - (R2.bmm(S)).bmm(R)
+    T[7] = (S.bmm(R)).bmm(S2) - (S2.bmm(R)).bmm(S)
+    T[8] = R2.bmm(S2) + S2.bmm(R2) - 2./n_dim * I * Btrace(S2.bmm(R2))
+    T[9] = (R.bmm(S2)).bmm(R2) - (R2.bmm(S2)).bmm(R)
+    Lam[0] = Btrace(S2)
+    Lam[1] = Btrace(R2)
+    Lam[2] = Btrace(S2.bmm(S))
+    Lam[3] = Btrace(R2.bmm(S))
+    Lam[4] = Btrace(R2.bmm(S2))
     return T, Lam
 
 def clamp(X, n_std):

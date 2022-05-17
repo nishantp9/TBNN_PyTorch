@@ -106,22 +106,11 @@ class TensorDataset(Dataset):
         A = remove_trace(A)
         self.n_dim = A.size()[-1]
 
-        # get list of tuple of basis and invariant dictionaries
-        # [(lam_dict, basis_dict), ...] for each input tensor
-        tensor_list  = [get_basis_invariants(X) for X in A]
-        self.n_basis = len(tensor_list[0][0])
-        self.n_lam   = len(tensor_list[0][1])
-
-        basis_dict = {
-            i: torch.stack([X[0][i] for X in tensor_list])
-            for i in range(self.n_basis)
-        }
-        invariant_dict = {
-            i: torch.stack([X[1][i] for X in tensor_list])
-            for i in range(self.n_lam)
-        }
+        basis_dict, invariant_dict  = get_basis_invariants(A)
+        self.n_basis = len(basis_dict)
+        self.n_lam   = len(invariant_dict)
         basis = torch.stack([basis_dict[i] for i in range(self.n_basis)], dim=1)
-        invariants = torch.stack([invariant_dict[i] for i in range(self.n_lam)], dim=1)
+        invariants = torch.stack([invariant_dict[i].squeeze() for i in range(self.n_lam)], dim=1)
         toc(t1, message='completed basis & invariants calculation: #shape = {}'.format(len(A)))
         return invariants, basis
 
