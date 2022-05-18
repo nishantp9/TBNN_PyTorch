@@ -10,6 +10,7 @@ import os
 import matplotlib.pyplot as plt
 
 def get_basis_invariants(X):
+    X = torch.from_numpy(X) if not torch.is_tensor(X) else X
     BT = lambda x : torch.transpose(x, 1, 2)
     Btrace = lambda x : torch.einsum('aii->a', x).view(-1,1,1)
     size = X.size()
