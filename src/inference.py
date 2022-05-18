@@ -10,6 +10,7 @@ from trainer import Trainer
 from utils import *
 from ops import seed
 import numpy as np
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 def insert_trace(y, A):
     n_dim = A.size()[-1]
@@ -49,7 +50,7 @@ class TBNN_PH():
         with torch.no_grad():
             y = self.trainer.predict(x)
         y = unnormalize(y, self.out_scale, self.params.normalizing_strategy_output)
-        y = insert_trace(y, A)
+        y = insert_trace(y, torch.from_numpy(A))
         y = y.cpu().detach().numpy()
         return y
 
