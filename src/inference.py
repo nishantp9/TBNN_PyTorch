@@ -38,11 +38,12 @@ class TBNN_PH():
         self.out_scale   = self.trainer.scale['output']
 
     def __call__(self, A):
+        if A.ndim == 2: A = A[np.newaxis,...]
         basis_dict, invariant_dict  = get_basis_invariants(A)
         n_basis = len(basis_dict)
         n_lam   = len(invariant_dict)
         basis = torch.stack([basis_dict[i] for i in range(n_basis)], dim=1)
-        invariants = torch.stack([invariant_dict[i].squeeze() for i in range(n_lam)], dim=1)
+        invariants = torch.stack([invariant_dict[i].view(-1) for i in range(n_lam)], dim=1)
         x = {
             'basis': normalize(basis, self.basis_scale, self.params.normalizing_strategy_basis),
             'lam'  : normalize(invariants, self.lam_scale, self.params.normalizing_strategy_lam)
