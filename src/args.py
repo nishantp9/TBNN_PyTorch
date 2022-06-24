@@ -42,10 +42,10 @@ def parameters():
 
     parser.add_argument('--clamp_input',    dest='clamp_input', action='store_true')
     parser.add_argument('--no-clamp_input', dest='clamp_input', action='store_false')
-    parser.set_defaults(use_cuda=False)
+    parser.set_defaults(clamp_input=False)
     parser.add_argument('--clamp_output',    dest='clamp_output', action='store_true')
     parser.add_argument('--no-clamp_output', dest='clamp_output', action='store_false')
-    parser.set_defaults(use_cuda=False)
+    parser.set_defaults(clamp_output=False)
     parser.add_argument('--clamp_std', type=int, default=3,
                         help='number of std deviations to be clamped')
 
