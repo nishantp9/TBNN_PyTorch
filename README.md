@@ -12,10 +12,10 @@ conda install matplotlib
 conda install scipy
 conda update --all
 ```
-##### LINUX
-`conda install pytorch=1.7.1 torchvision=0.8.2 cudatoolkit=10.1 -c pytorch`
-##### MAC
-`conda install pytorch==1.6.0 torchvision==0.7.0 -c pytorch`
+##### LINUX (torch 1.13)
+`conda install pytorch torchvision -c pytorch`
+##### MAC (torch 1.13)
+`conda install pytorch torchvision -c pytorch`
 
 
 ## Dataset
