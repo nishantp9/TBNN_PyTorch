@@ -105,8 +105,8 @@ def parameters():
     parser.add_argument('--no-schedule_lr', dest='schedule_lr', action='store_true')
     parser.set_defaults(schedule_lr=True)
 
-    parser.add_argument('--loss_type', type=str, default='mse',
-                        choices=['mse', 'mae', 'smooth_mae'],
+    parser.add_argument('--loss_type', type=str, default='alignment',
+                        choices=['mse', 'mae', 'smooth_mae', 'eig', 'alignment'],
                         help="type of loss to be used for training")
 
     # Logging specific arguments
