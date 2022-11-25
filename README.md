@@ -12,9 +12,7 @@ conda install matplotlib
 conda install scipy
 conda update --all
 ```
-##### LINUX (torch 1.13)
-`conda install pytorch torchvision -c pytorch`
-##### MAC (torch 1.13)
+##### PyTorch 1.13
 `conda install pytorch torchvision -c pytorch`
 
 
