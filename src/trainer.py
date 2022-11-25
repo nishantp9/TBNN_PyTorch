@@ -135,8 +135,7 @@ class Trainer(object):
             self.optimizer.zero_grad()
 
             y_pred = self.predict(x)
-
-            loss = loss_function(y_true, y_pred, self.params.loss_type)
+            loss = loss_function(y_true, y_pred, self.params.loss_type, S=x_basis[:,0,...])
             loss.backward()
             self.optimizer.step()
             epoch_loss += loss.detach().cpu().item() 
@@ -162,7 +161,7 @@ class Trainer(object):
 
             y_pred = self.predict(x)
 
-            loss = loss_function(y_true, y_pred, self.params.loss_type)
+            loss = loss_function(y_true, y_pred, self.params.loss_type, S=x_basis[:,0,...])
             epoch_loss += loss.detach().cpu().item() 
 
         epoch_loss /= n_batches
